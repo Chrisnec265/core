@@ -61,3 +61,51 @@ Type-check the example against the SDK source:
 ```bash
 npm run typecheck:examples
 ```
+
+## First-run walkthrough
+
+`src/WalkthroughOverlay.tsx` adds a dismissible guided overlay that appears on a
+user's first visit to the demo application. It guides through four steps: welcome,
+wallet connection, network selection, and contract examples.
+
+**Features:**
+- Dismissible via the ✕ button or the `Escape` key (session-only — reappears on the next load unless completed)
+- Keyboard navigation: `←` / `→` or `Enter` to move between steps, `Escape` to dismiss
+- Persistent completion: clicking **Done ✓** writes a flag to `localStorage` so the overlay never shows again
+- Falls back gracefully when `localStorage` is unavailable (SSR, private browsing, quota exceeded)
+
+**Usage:**
+
+```tsx
+import { WalkthroughOverlay } from "./src/WalkthroughOverlay";
+
+// Mount once at the app root — it self-hides when completed or dismissed.
+function App() {
+  return (
+    <>
+      <WalkthroughOverlay />
+      {/* rest of your app */}
+    </>
+  );
+}
+```
+
+**Using the manager directly (framework-agnostic):**
+
+```ts
+import { createWalkthroughManager } from "sorokit-core";
+
+const manager = createWalkthroughManager({
+  id: "my-app",
+  steps: [
+    { id: "welcome", title: "Welcome", description: "Let's get started." },
+    { id: "wallet",  title: "Connect Wallet", description: "Connect Freighter." },
+  ],
+});
+
+const unsubscribe = manager.subscribe((state) => console.log(state));
+document.addEventListener("keydown", manager.handleKeyDown);
+
+manager.next();     // advance
+manager.complete(); // persist and hide
+```
